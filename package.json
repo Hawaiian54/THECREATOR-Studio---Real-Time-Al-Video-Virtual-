@@ -1,0 +1,10 @@
+{
+  "name": "thecreator-live",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Local-first browser video studio with a dependency-free local settings API",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  }
+}
