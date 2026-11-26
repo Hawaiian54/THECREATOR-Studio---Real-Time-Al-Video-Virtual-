@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#09090b">
+  <title>THECREATOR LIVE — Local Video Studio</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #09090b;
+      --panel: #121216;
+      --panel-raised: #17171d;
+      --line: #1c1c22;
+      --muted: #898992;
+      --text: #f4f4f5;
+      --green: #10b981;
+      --indigo: #6366f1;
+      --radius: 14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--bg); color: var(--text); }
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+      outline: 2px solid #818cf8; outline-offset: 3px;
+    }
+    .app-shell { min-height: 100vh; }
+    .topbar {
+      min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      padding: 14px 26px; border-bottom: 1px solid var(--line); background: rgba(15, 15, 18, .94);
+      position: sticky; top: 0; z-index: 5; backdrop-filter: blur(18px);
+    }
+    .brand-wrap, .brand, .top-actions, .telemetry, .telemetry-item, .button-row, .section-heading, .slider-heading,
+    .engine-heading, .camera-controls, .view-switch, .live-label { display: flex; align-items: center; }
+    .brand-wrap { gap: 18px; min-width: 0; }
+    .brand { gap: 10px; white-space: nowrap; }
+    .brand-mark {
+      width: 31px; height: 31px; display: grid; place-items: center; border-radius: 9px;
+      color: #d1fae5; background: linear-gradient(145deg, #134e4a, #111827); border: 1px solid #225b52;
+    }
+    .brand-mark svg { width: 17px; }
+    .brand-name { font-size: 13px; font-weight: 850; letter-spacing: .13em; }
+    .brand-name span { color: #a1a1aa; font-weight: 650; }
+    .no-credits {
+      border: 1px solid #243b34; border-radius: 999px; padding: 7px 10px; color: #9de8c9; background: #10201b;
+      font-size: 9px; font-weight: 750; letter-spacing: .1em; white-space: nowrap;
+    }
+    .top-actions { gap: 10px; }
+    .telemetry { gap: 0; min-height: 38px; border: 1px solid var(--line); border-radius: 10px; background: #0e0e11; }
+    .telemetry-item { gap: 7px; padding: 0 11px; color: #d4d4d8; font-size: 11px; white-space: nowrap; }
+    .telemetry-item + .telemetry-item { border-left: 1px solid var(--line); }
+    .telemetry-item small { color: #777780; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
+    .telemetry-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px #10b98177; }
+    .button {
+      border: 1px solid #2a2a32; background: #19191f; border-radius: 9px; padding: 10px 13px;
+      cursor: pointer; transition: background .18s, border-color .18s, transform .18s; font-size: 11px; font-weight: 700;
+      white-space: nowrap;
+    }
+    .button:hover { background: #23232a; border-color: #3a3a45; }
+    .button:active { transform: translateY(1px); }
+    .button.primary { border-color: #3c3e91; background: #22234b; }
+    .button.primary:hover { background: #2b2c5e; }
+    .button.live { color: #062b1e; background: var(--green); border-color: #34d399; }
+    .button.live:hover { background: #34d399; }
+    .button.ghost { background: transparent; }
+    .button.small { padding: 8px 10px; font-size: 10px; }
+    .button:disabled { opacity: .48; cursor: not-allowed; }
+    .main-layout {
+      width: min(1600px, 100%); margin: 0 auto; padding: 24px 26px 30px;
+      display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start;
+    }
+    .workspace { min-width: 0; }
+    .workspace-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin: 2px 0 16px; }
+    .eyebrow { color: #8c8c96; font-size: 9px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+    h1 { font-size: 19px; margin: 6px 0 0; letter-spacing: -.035em; }
+    .view-switch { gap: 3px; border: 1px solid var(--line); border-radius: 9px; background: #101013; padding: 3px; }
+    .view-switch button { border: 0; background: transparent; color: #8e8e98; padding: 8px 10px; border-radius: 6px; font-size: 10px; cursor: pointer; }
+    .view-switch button[aria-pressed="true"] { color: white; background: #25252d; }
+    .viewport-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .viewport-grid.full-output { grid-template-columns: minmax(0, 1fr); }
+    .viewport-grid.full-output .source-card { display: none; }
+    .feed-card { min-width: 0; overflow: hidden; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+    .feed-head { min-height: 42px; padding: 0 13px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); }
+    .feed-title { display: flex; gap: 8px; align-items: center; font-size: 10px; font-weight: 750; }
+    .feed-title .muted { color: #777780; font-weight: 550; }
+    .feed-tag { color: #a1a1aa; font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+    .feed-tag.output-tag { color: #aaaaff; }
+    .canvas-wrap { position: relative; overflow: hidden; aspect-ratio: 16 / 10; background: #0d1015; }
+    .canvas-wrap canvas { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .source-overlay { position: absolute; inset: auto 11px 11px; display: flex; justify-content: space-between; align-items: flex-end; pointer-events: none; }
+    .source-caption { padding: 7px 9px; background: #09090bd9; border: 1px solid #ffffff14; border-radius: 7px; font-size: 9px; color: #dddde2; }
+    .source-controls { padding: 10px; display: flex; gap: 8px; border-top: 1px solid var(--line); }
+    .source-controls select { flex: 1; min-width: 0; }
+    select, .text-input {
+      color: #d4d4d8; background: #0d0d10; border: 1px solid #292930; border-radius: 8px; padding: 9px 10px;
+      min-height: 36px; font-size: 10px;
+    }
+    .broadcast-banner {
+      display: none; padding: 9px 12px; align-items: center; justify-content: space-between; gap: 10px;
+      border-top: 1px solid #174b3a; background: #0c211a; color: #a7f3d0; font-size: 9px; font-weight: 800;
+      letter-spacing: .1em;
+    }
+    .broadcast-banner.visible { display: flex; }
+    .live-label { gap: 7px; }
+    .live-pip { width: 7px; height: 7px; background: var(--green); border-radius: 50%; box-shadow: 0 0 10px #10b981; animation: pulse 1.6s infinite; }
+    @keyframes pulse { 50% { opacity: .42; box-shadow: 0 0 2px #10b981; } }
+    .feed-foot { padding: 10px 12px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+    .feed-foot-copy { color: #888891; font-size: 9px; }
+    .camera-controls { gap: 7px; }
+    .camera-controls select { max-width: 190px; }
+    .notice { min-height: 18px; margin: 8px 2px 0; color: #898992; font-size: 10px; }
+    .notice.error { color: #fca5a5; }
+    .notice.success { color: #86efac; }
+    .sidebar { display: grid; gap: 12px; }
+    .panel { padding: 15px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+    .section-heading { justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .section-heading h2 { margin: 0; font-size: 12px; letter-spacing: -.01em; }
+    .section-heading .sub { margin-top: 4px; color: #81818b; font-size: 9px; }
+    .step-num { color: #777780; font-size: 9px; font-weight: 750; }
+    .persona-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .persona {
+      min-width: 0; position: relative; border: 1px solid #292930; border-radius: 9px; padding: 0; text-align: left;
+      background: #0f0f12; overflow: hidden; cursor: pointer; transition: border-color .18s, transform .18s;
+    }
+    .persona:hover { transform: translateY(-1px); border-color: #4a4a58; }
+    .persona[aria-pressed="true"] { border-color: #7779f4; box-shadow: 0 0 0 1px #6366f144; }
+    .persona-art { height: 66px; position: relative; overflow: hidden; display: grid; place-items: center; background: linear-gradient(135deg,#3b2641,#d29f87); }
+    .persona-art::before { content: ""; width: 37px; height: 48px; border-radius: 48% 48% 44% 44%; background: linear-gradient(90deg,#bd826c,#f0c2a8); position: absolute; top: 13px; box-shadow: 0 -7px 0 2px #d9c090; }
+    .persona-art::after { content: ""; position: absolute; width: 72px; height: 30px; border-radius: 50% 50% 0 0; bottom: -16px; background: #1d2534; }
+    .persona-art.cyber { background: radial-gradient(circle at 50% 35%,#263d5f,#131123 75%); }
+    .persona-art.cyber::before { background: linear-gradient(90deg,#552e70,#bb79a2); box-shadow: 0 -7px 0 3px #161328, 0 0 18px #67e8f9; }
+    .persona-art.editorial { background: linear-gradient(135deg,#bea98f,#38312c); }
+    .persona-art.editorial::before { background: linear-gradient(90deg,#714c3b,#e5bfa2); box-shadow: 0 -8px 0 4px #30241f; }
+    .persona-art.warm { background: linear-gradient(135deg,#c77950,#f1c99b); }
+    .persona-art.warm::before { background: linear-gradient(90deg,#9b5b40,#efc4a0); box-shadow: 0 -9px 0 3px #573826; }
+    .persona-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 8px; color: #d5d5da; font-size: 9px; font-weight: 650; }
+    .upload-button { width: 100%; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 7px; }
+    .upload-button span { font-size: 15px; line-height: 10px; }
+    .consent-line { display: flex; align-items: flex-start; gap: 7px; margin-top: 9px; color: #85858f; font-size: 9px; line-height: 1.45; cursor: pointer; }
+    .consent-line input { margin: 1px 0 0; accent-color: var(--indigo); }
+    .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 3px; background: #0c0c0f; border: 1px solid var(--line); border-radius: 9px; }
+    .mode-tabs button { border: 0; background: transparent; color: #90909a; cursor: pointer; border-radius: 6px; padding: 9px 5px; font-size: 9px; }
+    .mode-tabs button[aria-pressed="true"] { background: #252546; color: #d7d7ff; }
+    .slider-list { display: grid; gap: 14px; margin-top: 15px; }
+    .slider-heading { justify-content: space-between; margin-bottom: 7px; color: #c6c6ce; font-size: 10px; }
+    .slider-value { color: #a5a5ff; font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; height: 4px; margin: 0; accent-color: var(--indigo); cursor: pointer; }
+    .range-limits { margin-top: 5px; display: flex; justify-content: space-between; color: #666670; font-size: 8px; }
+    details.engine { padding: 0; overflow: hidden; }
+    details.engine summary { list-style: none; padding: 14px 15px; cursor: pointer; }
+    details.engine summary::-webkit-details-marker { display: none; }
+    .engine-heading { justify-content: space-between; }
+    .engine-heading strong { display: block; font-size: 11px; }
+    .engine-heading small { display: block; margin-top: 4px; color: #80808a; font-size: 9px; }
+    .chevron { color: #898992; font-size: 12px; transition: transform .2s; }
+    details[open] .chevron { transform: rotate(180deg); }
+    .engine-body { padding: 0 15px 15px; border-top: 1px solid var(--line); }
+    .field-label { display: block; margin: 12px 0 6px; color: #a1a1aa; font-size: 9px; }
+    .endpoint-row { display: flex; gap: 6px; }
+    .endpoint-row input { flex: 1; min-width: 0; }
+    .engine-status { display: flex; align-items: center; gap: 7px; margin: 8px 0 10px; color: #85858f; font-size: 9px; }
+    .engine-status .status-light { width: 6px; height: 6px; border-radius: 50%; background: #666; }
+    .engine-status.connected { color: #86efac; }
+    .engine-status.connected .status-light { background: var(--green); }
+    .engine-status.error { color: #fca5a5; }
+    .engine-status.error .status-light { background: #ef4444; }
+    .engine-options { display: grid; gap: 6px; }
+    .engine-option { display: flex; align-items: flex-start; gap: 8px; padding: 9px; border: 1px solid #27272f; border-radius: 8px; cursor: pointer; }
+    .engine-option:has(input:checked) { border-color: #5556b0; background: #17172a; }
+    .engine-option input { margin: 2px 0 0; accent-color: var(--indigo); }
+    .engine-option strong { display: block; font-size: 9px; }
+    .engine-option small { display: block; margin-top: 3px; color: #85858f; font-size: 8px; line-height: 1.4; }
+    .footer-note { padding: 3px 4px; color: #6f6f79; font-size: 9px; line-height: 1.6; }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 10; display: none; place-items: center; padding: 18px; background: #000a; backdrop-filter: blur(8px); }
+    .modal-backdrop.open { display: grid; }
+    .modal { width: min(500px, 100%); padding: 22px; background: #151519; border: 1px solid #303038; border-radius: 16px; box-shadow: 0 25px 90px #0009; }
+    .modal-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .modal h2 { margin: 0; font-size: 17px; }
+    .modal p { color: #a1a1aa; font-size: 11px; line-height: 1.65; }
+    .modal .close { border: 0; background: transparent; color: #aaa; font-size: 20px; cursor: pointer; }
+    .steps { display: grid; gap: 8px; padding: 0; list-style: none; }
+    .steps li { padding: 10px; border: 1px solid #292930; border-radius: 9px; color: #c5c5ce; font-size: 10px; line-height: 1.55; }
+    .steps strong { color: #f4f4f5; }
+    .modal-warning { padding: 10px; border-radius: 8px; background: #211d12; color: #fcd98b !important; }
+    .hidden-file { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    @media (max-width: 1150px) {
+      .main-layout { grid-template-columns: minmax(0, 1fr) 310px; padding-inline: 18px; }
+      .topbar { padding-inline: 18px; }
+      .no-credits { display: none; }
+    }
+    @media (max-width: 900px) {
+      .main-layout { grid-template-columns: minmax(0, 1fr); }
+      .sidebar { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+      .sidebar .panel:nth-child(2) { grid-row: span 2; }
+      .footer-note { grid-column: 1 / -1; }
+    }
+    @media (max-width: 680px) {
+      .topbar { position: static; flex-wrap: wrap; gap: 12px; padding: 13px 14px; }
+      .brand-wrap { flex: 1; }
+      .top-actions { width: 100%; justify-content: space-between; }
+      .telemetry { flex: 1; }
+      .telemetry-item { flex: 1; justify-content: center; padding-inline: 7px; }
+      .telemetry-item small { display: none; }
+      .top-actions .button { padding: 9px 10px; }
+      .main-layout { padding: 18px 12px 24px; gap: 14px; }
+      .workspace-head { align-items: flex-start; flex-direction: column; }
+      .viewport-grid { grid-template-columns: 1fr; }
+      .viewport-grid.full-output { grid-template-columns: 1fr; }
+      .canvas-wrap { aspect-ratio: 16 / 10; }
+      .source-controls { flex-wrap: wrap; }
+      .camera-controls { flex: 1; }
+      .camera-controls select { flex: 1; max-width: unset; }
+      .sidebar { grid-template-columns: 1fr; }
+      .sidebar .panel:nth-child(2) { grid-row: auto; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <div class="brand" aria-label="THECREATOR LIVE">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 17.5 12 4l7 13.5h-4L12 10l-3 7.5H5Z" fill="currentColor"/><path d="M9 15h6" stroke="#10b981" stroke-width="1.5"/></svg>
+          </div>
+          <div class="brand-name">THECREATOR <span>LIVE</span></div>
+        </div>
+        <div class="no-credits">NO CREDITS <span aria-hidden="true">•</span> LOCAL STUDIO</div>
+      </div>
+      <div class="top-actions">
+        <div class="telemetry" aria-label="Studio telemetry">
+          <div class="telemetry-item"><span class="telemetry-dot"></span><strong id="fps-value">60</strong><small>FPS</small></div>
+          <div class="telemetry-item"><strong id="latency-value">16</strong><small>ms frame</small></div>
+          <div class="telemetry-item"><span class="telemetry-dot" id="engine-dot"></span><span id="engine-telemetry">Canvas</span></div>
+        </div>
+        <button class="button" id="connect-apps" type="button">Connect Apps</button>
+        <button class="button" id="virtual-cam" type="button" aria-pressed="false"><span id="virtual-cam-label">Virtual Cam: Standby</span></button>
+      </div>
+    </header>
+
+    <main class="main-layout">
+      <section class="workspace" aria-labelledby="workspace-title">
+        <div class="workspace-head">
+          <div>
+            <div class="eyebrow">Live production workspace</div>
+            <h1 id="workspace-title">Video Studio</h1>
+          </div>
+          <div class="view-switch" role="group" aria-label="Preview layout">
+            <button type="button" data-view="split" aria-pressed="true">Split View</button>
+            <button type="button" data-view="output" aria-pressed="false">Output Only</button>
+          </div>
+        </div>
+
+        <div class="viewport-grid" id="viewport-grid">
+          <article class="feed-card source-card">
+            <div class="feed-head">
+              <div class="feed-title"><span>01</span> Source input <span class="muted" id="source-name">Studio demo</span></div>
+              <span class="feed-tag" id="source-status">DEMO FEED</span>
+            </div>
+            <div class="canvas-wrap">
+              <canvas id="source-canvas" aria-label="Live camera or animated studio demo preview"></canvas>
+              <div class="source-overlay"><span class="source-caption" id="source-caption">Procedural studio feed · local</span></div>
+            </div>
+            <div class="source-controls">
+              <div class="camera-controls">
+                <label class="sr-only" for="camera-select">Camera source</label>
+                <select id="camera-select" aria-label="Select webcam"><option value="">Default camera</option></select>
+                <button class="button small" id="start-camera" type="button">Start Camera</button>
+              </div>
+              <button class="button small ghost" id="demo-feed" type="button">Use demo</button>
+            </div>
+          </article>
+
+          <article class="feed-card output-card">
+            <div class="feed-head">
+              <div class="feed-title"><span>02</span> Transformed output <span class="muted" id="output-persona">Studio Blonde</span></div>
+              <span class="feed-tag output-tag">LOCAL PREVIEW</span>
+            </div>
+            <div class="canvas-wrap">
+              <canvas id="output-canvas" aria-label="Locally processed video output"></canvas>
+            </div>
+            <div class="broadcast-banner" id="broadcast-banner">
+              <span class="live-label"><span class="live-pip"></span>BROADCASTING TO VIRTUAL CAMERA</span>
+              <button class="button small" id="popout-feed" type="button">Pop-Out Clean Feed</button>
+            </div>
+            <div class="feed-foot">
+              <span class="feed-foot-copy" id="mode-caption">Face mode · local visual effects</span>
+              <button class="button small ghost" id="mesh-toggle" type="button" aria-pressed="false" aria-label="Toggle AI Landmark and Mesh Overlay">◇ AI landmarks &amp; mesh: Off</button>
+            </div>
+          </article>
+        </div>
+        <div class="notice" id="app-notice" role="status" aria-live="polite"></div>
+      </section>
+
+      <aside class="sidebar" aria-label="Video synthesis controls">
+        <section class="panel">
+          <div class="section-heading">
+            <div><h2>Target persona</h2><div class="sub">Choose a look for your preview</div></div>
+            <span class="step-num">01 / 03</span>
+          </div>
+          <div class="persona-grid" role="group" aria-label="Persona presets">
+            <button class="persona" type="button" data-persona="Studio Blonde" aria-pressed="true">
+              <span class="persona-art"></span><span class="persona-name">Studio Blonde</span>
+            </button>
+            <button class="persona" type="button" data-persona="Cyberpunk Neon" aria-pressed="false">
+              <span class="persona-art cyber"></span><span class="persona-name">Cyberpunk Neon</span>
+            </button>
+            <button class="persona" type="button" data-persona="Editorial Portrait" aria-pressed="false">
+              <span class="persona-art editorial"></span><span class="persona-name">Editorial Portrait</span>
+            </button>
+            <button class="persona" type="button" data-persona="Natural Warmth" aria-pressed="false">
+              <span class="persona-art warm"></span><span class="persona-name">Natural Warmth</span>
+            </button>
+          </div>
+          <input class="hidden-file" id="reference-file" type="file" accept="image/*">
+          <button class="button small ghost upload-button" id="upload-reference" type="button"><span>+</span> Upload reference face</button>
+          <label class="consent-line"><input id="reference-consent" type="checkbox">I own this image or have explicit permission to use it. It is only shown as a local visual reference.</label>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div><h2>Transformation</h2><div class="sub">Adjust your live canvas look</div></div>
+            <span class="step-num">02 / 03</span>
+          </div>
+          <div class="mode-tabs" role="group" aria-label="Transformation mode">
+            <button type="button" data-mode="face" aria-pressed="true">Face swap only</button>
+            <button type="button" data-mode="full" aria-pressed="false">Full-body &amp; hair</button>
+          </div>
+          <div class="slider-list">
+            <label>
+              <span class="slider-heading"><span>Identity blend</span><span class="slider-value" data-value-for="identity">72%</span></span>
+              <input type="range" min="0" max="100" value="72" data-control="identity" aria-label="Identity blend">
+              <span class="range-limits"><span>Subtle</span><span>Strong</span></span>
+            </label>
+            <label>
+              <span class="slider-heading"><span>Skin &amp; hair smoothing</span><span class="slider-value" data-value-for="smoothing">38%</span></span>
+              <input type="range" min="0" max="100" value="38" data-control="smoothing" aria-label="Skin and hair smoothing">
+              <span class="range-limits"><span>Natural</span><span>Soft</span></span>
+            </label>
+            <label>
+              <span class="slider-heading"><span>Studio lighting match</span><span class="slider-value" data-value-for="lighting">54%</span></span>
+              <input type="range" min="0" max="100" value="54" data-control="lighting" aria-label="Studio lighting match">
+              <span class="range-limits"><span>Source</span><span>Matched</span></span>
+            </label>
+            <label>
+              <span class="slider-heading"><span>Temporal stabilization</span><span class="slider-value" data-value-for="stabilization">65%</span></span>
+              <input type="range" min="0" max="100" value="65" data-control="stabilization" aria-label="Temporal stabilization">
+              <span class="range-limits"><span>Responsive</span><span>Steady</span></span>
+            </label>
+          </div>
+        </section>
+
+        <details class="panel engine" id="engine-drawer">
+          <summary>
+            <span class="engine-heading"><span><strong>Local engine &amp; WebSocket bridge</strong><small>Browser canvas · no account required</small></span><span class="chevron" aria-hidden="true">⌄</span></span>
+          </summary>
+          <div class="engine-body">
+            <label class="field-label" for="ws-endpoint">Local WebSocket endpoint</label>
+            <div class="endpoint-row">
+              <input class="text-input" id="ws-endpoint" type="url" value="ws://127.0.0.1:8188/ws" spellcheck="false" aria-label="Local WebSocket endpoint">
+              <button class="button small" id="test-connection" type="button">Test</button>
+            </div>
+            <div class="engine-status" id="connection-status" role="status"><span class="status-light"></span><span>Not connected · browser engine active</span></div>
+            <div class="engine-options" role="radiogroup" aria-label="Processing engine">
+              <label class="engine-option"><input type="radio" name="engine" value="canvas" checked><span><strong>Browser Canvas Engine (Instant)</strong><small>Local visual effects, processed in this tab.</small></span></label>
+              <label class="engine-option"><input type="radio" name="engine" value="websocket"><span><strong>Local GPU WebSocket Stream</strong><small>Connection test only; a compatible local bridge must provide its own integration.</small></span></label>
+            </div>
+          </div>
+        </details>
+        <div class="footer-note"><strong id="settings-status" role="status" aria-live="polite">Local settings: connecting…</strong><br>Your camera stays in this browser tab. Presets and sliders apply local canvas color/effect styling; they do not run a face-replacement model or remote inference. Landmark and body guides are illustrative, not detected tracking points. Window capture is a local workflow and does not install an OS virtual-camera driver. Use only imagery and likenesses you have permission to use.</div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="apps-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-top">
+        <div><div class="eyebrow">Output setup</div><h2 id="modal-title">Connect your streaming apps</h2></div>
+        <button class="close" id="close-modal" type="button" aria-label="Close setup">&times;</button>
+      </div>
+      <p>THECREATOR LIVE renders a clean, local browser feed. To use it in another app, capture the pop-out window in OBS, then send OBS Virtual Camera to your destination.</p>
+      <ol class="steps">
+        <li><strong>1. Start the preview</strong><br>Allow camera access or use the built-in studio demo feed. Turn on Virtual Cam, then choose <em>Pop-Out Clean Feed</em>.</li>
+        <li><strong>2. Add the clean feed to OBS</strong><br>Add a Window Capture source for the borderless THECREATOR LIVE feed. Crop/fit as needed, then click <em>Start Virtual Camera</em> in OBS.</li>
+        <li><strong>3. Select the camera in your app</strong><br>Choose OBS Virtual Camera in TikTok LIVE Studio, Zoom, Discord, or WhatsApp Desktop. Availability depends on your OS and app.</li>
+      </ol>
+      <p class="modal-warning">This page does not install or register an OS camera device. Browser support and third-party app capture options vary; never broadcast without checking your selected source and consent.</p>
+      <button class="button primary" id="modal-done" type="button">Got it</button>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+      const sourceCanvas = $("#source-canvas");
+      const outputCanvas = $("#output-canvas");
+      const sourceCtx = sourceCanvas.getContext("2d", { alpha: false });
+      const outputCtx = outputCanvas.getContext("2d", { alpha: false });
+      const previousFrame = document.createElement("canvas");
+      const previousCtx = previousFrame.getContext("2d");
+      const notice = $("#app-notice");
+      const sourceVideo = document.createElement("video");
+      sourceVideo.autoplay = true;
+      sourceVideo.muted = true;
+      sourceVideo.playsInline = true;
+
+      const state = {
+        stream: null, raf: 0, lastFrame: 0, fps: 60, fpsFrames: 0, fpsSince: performance.now(),
+        cameraId: "", mode: "face", persona: "Studio Blonde", presetPersona: "Studio Blonde", view: "split", mesh: false,
+        virtualCam: false, engine: "canvas", values: { identity: 72, smoothing: 38, lighting: 54, stabilization: 65 },
+        sourceWidth: 960, sourceHeight: 600, ws: null, wsTimer: 0, uploadUrl: null, uploadedImage: null
+      };
+      let settingsReady = false;
+      let settingsTouched = false;
+      let settingsSaveTimer = 0;
+      const personaFilters = {
+        "Studio Blonde": "saturate(1.08) contrast(1.04) brightness(1.03)",
+        "Cyberpunk Neon": "saturate(1.35) contrast(1.14) hue-rotate(27deg)",
+        "Editorial Portrait": "saturate(.78) contrast(1.18) sepia(.12)",
+        "Natural Warmth": "saturate(1.12) contrast(1.02) sepia(.16)"
+      };
+      let demoTime = 0;
+
+      function setNotice(message, type = "") {
+        notice.textContent = message;
+        notice.className = `notice${type ? ` ${type}` : ""}`;
+      }
+
+      function updateModeCaption() {
+        $("#mode-caption").textContent = `${state.mode === "face" ? "Face mode" : "Full-body & hair mode"} · ${state.engine === "canvas" ? "local visual effects" : "local bridge selected"}`;
+      }
+
+      function collectSettings() {
+        return {
+          persona: state.presetPersona,
+          mode: state.mode,
+          view: state.view,
+          mesh: state.mesh,
+          values: { ...state.values },
+          engine: state.engine,
+          wsEndpoint: $("#ws-endpoint").value
+        };
+      }
+
+      function queueSettingsSave() {
+        settingsTouched = true;
+        if (!settingsReady) return;
+        clearTimeout(settingsSaveTimer);
+        $("#settings-status").textContent = "Local settings: saving…";
+        settingsSaveTimer = window.setTimeout(async () => {
+          try {
+            const response = await fetch("/api/settings", {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(collectSettings())
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || `Request failed (${response.status}).`);
+            $("#settings-status").textContent = "Local settings: saved on this device.";
+          } catch (error) {
+            $("#settings-status").textContent = `Local settings could not be saved: ${error.message}`;
+          }
+        }, 350);
+      }
+
+      function applySettings(settings) {
+        state.presetPersona = settings.persona;
+        state.persona = settings.persona;
+        state.mode = settings.mode;
+        state.view = settings.view;
+        state.mesh = settings.mesh;
+        state.values = { ...settings.values };
+        state.engine = settings.engine;
+        $$(".persona").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.persona === state.persona)));
+        $$("[data-mode]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.mode === state.mode)));
+        $$("[data-view]").forEach(button => button.setAttribute("aria-pressed", String(button.dataset.view === state.view)));
+        $("#viewport-grid").classList.toggle("full-output", state.view === "output");
+        $("#output-persona").textContent = state.persona;
+        $("#mesh-toggle").setAttribute("aria-pressed", String(state.mesh));
+        $("#mesh-toggle").textContent = `◇ AI landmarks & mesh: ${state.mesh ? "On" : "Off"}`;
+        for (const [key, value] of Object.entries(state.values)) {
+          const slider = $(`[data-control="${key}"]`);
+          slider.value = String(value);
+          $(`[data-value-for="${key}"]`).textContent = `${value}%`;
+        }
+        $("#ws-endpoint").value = settings.wsEndpoint;
+        $$('input[name="engine"]').forEach(input => { input.checked = input.value === state.engine; });
+        $("#engine-telemetry").textContent = state.engine === "canvas" ? "Canvas" : "Local WS";
+        $("#engine-dot").style.background = state.engine === "canvas" ? "var(--green)" : "#818cf8";
+        updateModeCaption();
+      }
+
+      async function loadLocalSettings() {
+        try {
+          const response = await fetch("/api/settings", { headers: { Accept: "application/json" } });
+          const settings = await response.json();
+          if (!response.ok) throw new Error(settings.error || `Request failed (${response.status}).`);
+          if (!settingsTouched) applySettings(settings);
+          settingsReady = true;
+          $("#settings-status").textContent = "Local settings: restored from this device.";
+          if (settingsTouched) queueSettingsSave();
+        } catch (error) {
+          $("#settings-status").textContent = `Local settings unavailable: ${error.message}. Run npm start to enable persistence.`;
+        }
+      }
+
+      function resizeCanvases() {
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        for (const canvas of [sourceCanvas, outputCanvas, previousFrame]) {
+          const rect = canvas.getBoundingClientRect();
+          if (!rect.width || !rect.height) continue;
+          const width = Math.max(1, Math.round(rect.width * ratio));
+          const height = Math.max(1, Math.round(rect.height * ratio));
+          if (canvas.width !== width || canvas.height !== height) {
+            canvas.width = width;
+            canvas.height = height;
+          }
+        }
+      }
+
+      function drawDemo(ctx, width, height, time) {
+        const t = time / 1000;
+        const gradient = ctx.createLinearGradient(0, 0, width, height);
+        gradient.addColorStop(0, "#20243b");
+        gradient.addColorStop(.52, "#574555");
+        gradient.addColorStop(1, "#bd8067");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+        ctx.fillStyle = "#151923";
+        ctx.fillRect(width * .06, height * .1, width * .23, height * .72);
+        ctx.fillStyle = "#222939";
+        ctx.fillRect(width * .085, height * .13, width * .18, height * .65);
+        ctx.fillStyle = "#9bb9be";
+        ctx.globalAlpha = .3;
+        ctx.fillRect(width * .105, height * .16, width * .14, height * .45);
+        ctx.globalAlpha = 1;
+        for (let i = 0; i < 4; i++) {
+          ctx.fillStyle = `rgba(255,214,162,${.06 + i * .02})`;
+          ctx.beginPath();
+          ctx.ellipse(width * (.78 + i * .045), height * (.2 + i * .06), width * .06, height * .22, -.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = "#161c29";
+        ctx.beginPath();
+        ctx.ellipse(width * .53, height * 1.04, width * .34, height * .42, 0, 0, Math.PI * 2);
+        ctx.fill();
+        const bob = Math.sin(t * 1.6) * height * .012;
+        const turn = Math.sin(t * .75) * width * .009;
+        const cx = width * .52 + turn, cy = height * .43 + bob;
+        ctx.fillStyle = "#30252b";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - height * .035, width * .14, height * .23, -.05, Math.PI, Math.PI * 2);
+        ctx.lineTo(cx + width * .12, cy + height * .13);
+        ctx.quadraticCurveTo(cx, cy + height * .22, cx - width * .12, cy + height * .12);
+        ctx.closePath();
+        ctx.fill();
+        const face = ctx.createLinearGradient(cx - width * .07, cy, cx + width * .09, cy + height * .12);
+        face.addColorStop(0, "#bd816b");
+        face.addColorStop(.55, "#e0aa8e");
+        face.addColorStop(1, "#c98c76");
+        ctx.fillStyle = face;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, width * .091, height * .14, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#443238";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - height * .105, width * .095, height * .055, 0, Math.PI, Math.PI * 2);
+        ctx.fill();
+        const eyeY = cy - height * .006, eyeOffset = width * .03;
+        ctx.fillStyle = "#33282a";
+        ctx.beginPath(); ctx.ellipse(cx - eyeOffset, eyeY, width * .006, height * .004, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx + eyeOffset, eyeY, width * .006, height * .004, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "#9c5e5c"; ctx.lineWidth = Math.max(1, width * .002);
+        ctx.beginPath(); ctx.moveTo(cx - width * .012, cy + height * .065); ctx.quadraticCurveTo(cx, cy + height * .073, cx + width * .012, cy + height * .064); ctx.stroke();
+        ctx.fillStyle = "#e7cba8";
+        ctx.font = `${Math.max(9, width * .015)}px system-ui, sans-serif`;
+        ctx.fillText("STUDIO DEMO  ·  LOCAL PREVIEW", width * .035, height * .94);
+      }
+
+      function drawMesh(ctx, width, height) {
+        const cx = width * .52, cy = height * .43, rx = width * .09, ry = height * .14;
+        ctx.save();
+        ctx.lineWidth = Math.max(1, width / 850);
+        ctx.strokeStyle = "rgba(110, 231, 183, .8)";
+        ctx.fillStyle = "rgba(110, 231, 183, .85)";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx * 1.1, ry * 1.08, 0, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        for (let i = 0; i <= 20; i++) {
+          const angle = Math.PI * (i / 20);
+          const x = cx + Math.cos(angle) * rx * 1.08;
+          const y = cy + Math.sin(angle) * ry * 1.08;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        const points = [];
+        for (let i = 0; i < 9; i++) points.push([cx - rx * .72 + i * rx * .18, cy + Math.sin(i / 8 * Math.PI) * ry * .38 - ry * .06]);
+        for (const [x, y] of points) {
+          ctx.beginPath(); ctx.arc(x, y, Math.max(1.5, width / 420), 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.strokeStyle = "rgba(129, 140, 248, .7)";
+        ctx.beginPath();
+        ctx.moveTo(cx, cy + ry * .1); ctx.lineTo(cx - rx * .08, cy + ry * .43); ctx.lineTo(cx + rx * .08, cy + ry * .43); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(width * .52, height * .83, width * .18, height * .055, 0, Math.PI, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = "rgba(129, 140, 248, .34)";
+        ctx.beginPath(); ctx.moveTo(width * .52, height * .61); ctx.lineTo(width * .52, height * .94);
+        ctx.moveTo(width * .31, height * .78); ctx.lineTo(width * .73, height * .78); ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawDisclosure(ctx, width, height) {
+        const fontSize = Math.max(9, width * .014);
+        const label = "LOCAL VISUAL EFFECTS  ·  NO IDENTITY SWAP";
+        ctx.save();
+        ctx.font = `700 ${fontSize}px system-ui, sans-serif`;
+        const paddingX = Math.max(7, width * .012);
+        const boxHeight = fontSize + Math.max(8, height * .018);
+        const boxWidth = ctx.measureText(label).width + paddingX * 2;
+        const x = width * .025;
+        const y = height - height * .025 - boxHeight;
+        ctx.fillStyle = "rgba(9, 9, 11, .78)";
+        ctx.fillRect(x, y, boxWidth, boxHeight);
+        ctx.fillStyle = "#d4d4d8";
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, x + paddingX, y + boxHeight / 2);
+        ctx.restore();
+      }
+
+      function render(now) {
+        resizeCanvases();
+        const sw = sourceCanvas.width, sh = sourceCanvas.height;
+        if (sw && sh) {
+          if (state.stream && sourceVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+            sourceCtx.drawImage(sourceVideo, 0, 0, sw, sh);
+          } else {
+            drawDemo(sourceCtx, sw, sh, now);
+          }
+          const identity = state.values.identity / 100;
+          const smoothing = state.values.smoothing / 100;
+          const lighting = state.values.lighting / 100;
+          const stabilization = state.values.stabilization / 100 * .2;
+          const tint = state.persona === "Cyberpunk Neon" ? "saturate(1.2) hue-rotate(18deg)" : personaFilters[state.persona] || "";
+          const exposure = 1 + (lighting - .5) * .16;
+          const contrast = 1 + identity * .11 + (state.mode === "full" ? .05 : 0);
+          outputCtx.save();
+          outputCtx.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+          if (stabilization > 0) {
+            outputCtx.globalAlpha = stabilization;
+            outputCtx.drawImage(previousFrame, 0, 0);
+          }
+          outputCtx.globalAlpha = 1 - stabilization;
+          outputCtx.filter = `brightness(${exposure}) contrast(${contrast}) ${tint} ${smoothing > .02 ? `blur(${smoothing * .55}px)` : ""}`;
+          outputCtx.drawImage(sourceCanvas, 0, 0, outputCanvas.width, outputCanvas.height);
+          outputCtx.restore();
+          previousCtx.clearRect(0, 0, previousFrame.width, previousFrame.height);
+          previousCtx.drawImage(outputCanvas, 0, 0);
+          if (state.mesh) drawMesh(outputCtx, outputCanvas.width, outputCanvas.height);
+          drawDisclosure(outputCtx, outputCanvas.width, outputCanvas.height);
+        }
+        state.fpsFrames++;
+        if (now - state.fpsSince >= 1000) {
+          state.fps = Math.min(60, Math.round(state.fpsFrames * 1000 / (now - state.fpsSince)));
+          $("#fps-value").textContent = String(state.fps);
+          $("#latency-value").textContent = String(Math.max(8, Math.round(1000 / Math.max(1, state.fps))));
+          state.fpsFrames = 0;
+          state.fpsSince = now;
+        }
+        state.raf = requestAnimationFrame(render);
+      }
+
+      async function refreshCameras() {
+        const select = $("#camera-select");
+        const previous = state.cameraId;
+        try {
+          if (!navigator.mediaDevices?.enumerateDevices) return;
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const cameras = devices.filter(device => device.kind === "videoinput");
+          select.replaceChildren(new Option(cameras.length ? "Select a camera…" : "No camera found", ""));
+          cameras.forEach((camera, index) => {
+            select.add(new Option(camera.label || `Camera ${index + 1}`, camera.deviceId));
+          });
+          select.value = cameras.some(camera => camera.deviceId === previous) ? previous : "";
+        } catch (error) {
+          setNotice(`Could not list cameras: ${error.message}`, "error");
+        }
+      }
+
+      async function startCamera(deviceId = "") {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          setNotice("Camera access is unavailable in this browser or page context. The demo feed is still active.", "error");
+          return;
+        }
+        $("#start-camera").disabled = true;
+        try {
+          const constraints = { audio: false, video: deviceId ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 800 }, frameRate: { ideal: 30, max: 60 } } : { width: { ideal: 1280 }, height: { ideal: 800 }, frameRate: { ideal: 30, max: 60 } } };
+          const nextStream = await navigator.mediaDevices.getUserMedia(constraints);
+          if (state.stream) state.stream.getTracks().forEach(track => track.stop());
+          state.stream = nextStream;
+          sourceVideo.srcObject = nextStream;
+          await sourceVideo.play();
+          state.cameraId = nextStream.getVideoTracks()[0]?.getSettings().deviceId || deviceId;
+          $("#source-name").textContent = "Webcam";
+          $("#source-status").textContent = "CAMERA LIVE";
+          $("#source-caption").textContent = "Camera preview · stays in this tab";
+          $("#start-camera").textContent = "Restart Camera";
+          setNotice("Camera connected. Video is processed locally in this tab.", "success");
+          await refreshCameras();
+        } catch (error) {
+          const messages = {
+            NotAllowedError: "Camera permission was denied. Allow camera access in your browser settings, or keep using the demo feed.",
+            NotFoundError: "No camera was found. Connect a camera or use the demo feed.",
+            NotReadableError: "The camera is already in use or could not be opened. Close other camera apps and try again.",
+            OverconstrainedError: "This camera cannot satisfy the selected settings. Try the default camera."
+          };
+          setNotice(messages[error.name] || `Could not start camera: ${error.message}`, "error");
+          $("#source-name").textContent = "Studio demo";
+          $("#source-status").textContent = "DEMO FEED";
+        } finally {
+          $("#start-camera").disabled = false;
+        }
+      }
+
+      function useDemo() {
+        if (state.stream) state.stream.getTracks().forEach(track => track.stop());
+        state.stream = null;
+        sourceVideo.srcObject = null;
+        state.cameraId = "";
+        $("#camera-select").value = "";
+        $("#source-name").textContent = "Studio demo";
+        $("#source-status").textContent = "DEMO FEED";
+        $("#source-caption").textContent = "Procedural studio feed · local";
+        $("#start-camera").textContent = "Start Camera";
+        setNotice("Using the animated studio demo feed.", "success");
+      }
+
+      function setupWebSocket() {
+        const input = $("#ws-endpoint");
+        const status = $("#connection-status");
+        const button = $("#test-connection");
+        button.addEventListener("click", () => {
+          let endpoint;
+          try {
+            endpoint = new URL(input.value);
+            if (!["ws:", "wss:"].includes(endpoint.protocol)) throw new Error("Use a ws:// or wss:// endpoint.");
+          } catch (error) {
+            status.className = "engine-status error";
+            status.lastElementChild.textContent = error.message || "Enter a valid WebSocket URL.";
+            return;
+          }
+          if (state.ws) state.ws.close();
+          clearTimeout(state.wsTimer);
+          status.className = "engine-status";
+          status.lastElementChild.textContent = "Connecting to local bridge…";
+          button.disabled = true;
+          try {
+            const socket = new WebSocket(endpoint.href);
+            state.ws = socket;
+            state.wsTimer = window.setTimeout(() => {
+              if (socket.readyState === WebSocket.CONNECTING) {
+                socket.close();
+                status.className = "engine-status error";
+                status.lastElementChild.textContent = "Connection timed out. Check that your local bridge is running.";
+                button.disabled = false;
+              }
+            }, 5000);
+            socket.addEventListener("open", () => {
+              clearTimeout(state.wsTimer);
+              status.className = "engine-status connected";
+              status.lastElementChild.textContent = "Bridge reachable · no inference protocol configured";
+              button.disabled = false;
+              socket.close(1000, "Connection test complete");
+            }, { once: true });
+            socket.addEventListener("error", () => {
+              clearTimeout(state.wsTimer);
+              status.className = "engine-status error";
+              status.lastElementChild.textContent = "Connection failed. Check endpoint, service, and browser security settings.";
+              button.disabled = false;
+            }, { once: true });
+            socket.addEventListener("close", () => {
+              clearTimeout(state.wsTimer);
+              if (button.disabled) {
+                status.className = "engine-status error";
+                status.lastElementChild.textContent = "Connection closed before the test completed.";
+                button.disabled = false;
+              }
+            }, { once: true });
+          } catch (error) {
+            status.className = "engine-status error";
+            status.lastElementChild.textContent = `Could not connect: ${error.message}`;
+            button.disabled = false;
+          }
+        });
+      }
+
+      $("#start-camera").addEventListener("click", () => startCamera($("#camera-select").value));
+      $("#camera-select").addEventListener("change", event => {
+        if (event.target.value && state.stream) startCamera(event.target.value);
+      });
+      $("#demo-feed").addEventListener("click", useDemo);
+      navigator.mediaDevices?.addEventListener?.("devicechange", refreshCameras);
+      refreshCameras();
+
+      $$("[data-view]").forEach(button => button.addEventListener("click", () => {
+        state.view = button.dataset.view;
+        $$("[data-view]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+        $("#viewport-grid").classList.toggle("full-output", state.view === "output");
+        queueSettingsSave();
+        requestAnimationFrame(resizeCanvases);
+      }));
+      $$("[data-persona]").forEach(button => button.addEventListener("click", () => {
+        state.persona = button.dataset.persona;
+        state.presetPersona = state.persona;
+        $$(".persona").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+        $("#output-persona").textContent = state.persona;
+        queueSettingsSave();
+      }));
+      $$("[data-mode]").forEach(button => button.addEventListener("click", () => {
+        state.mode = button.dataset.mode;
+        $$("[data-mode]").forEach(item => item.setAttribute("aria-pressed", String(item === button)));
+        updateModeCaption();
+        queueSettingsSave();
+      }));
+      $$("[data-control]").forEach(input => input.addEventListener("input", () => {
+        state.values[input.dataset.control] = Number(input.value);
+        $(`[data-value-for="${input.dataset.control}"]`).textContent = `${input.value}%`;
+        queueSettingsSave();
+      }));
+
+      $("#mesh-toggle").addEventListener("click", event => {
+        state.mesh = !state.mesh;
+        event.currentTarget.setAttribute("aria-pressed", String(state.mesh));
+        event.currentTarget.textContent = `◇ AI landmarks & mesh: ${state.mesh ? "On" : "Off"}`;
+        queueSettingsSave();
+      });
+      $("#virtual-cam").addEventListener("click", event => {
+        state.virtualCam = !state.virtualCam;
+        event.currentTarget.classList.toggle("live", state.virtualCam);
+        event.currentTarget.setAttribute("aria-pressed", String(state.virtualCam));
+        $("#virtual-cam-label").textContent = `Virtual Cam: ${state.virtualCam ? "LIVE" : "Standby"}`;
+        $("#broadcast-banner").classList.toggle("visible", state.virtualCam);
+        setNotice(state.virtualCam ? "Preview is live in this page. Use Pop-Out Clean Feed with OBS Window Capture to route it to apps." : "Broadcast preview is on standby.");
+      });
+      $("#popout-feed").addEventListener("click", () => {
+        if (!outputCanvas.captureStream) {
+          setNotice("This browser does not support canvas captureStream. Use OBS Window Capture on this tab instead.", "error");
+          return;
+        }
+        const popup = window.open("", "thecreator-clean-feed", "popup,width=1280,height=800");
+        if (!popup) {
+          setNotice("Pop-out was blocked. Allow pop-ups for this page, or capture the studio window directly in OBS.", "error");
+          return;
+        }
+        const stream = outputCanvas.captureStream(30);
+        popup.document.open();
+        popup.document.write("<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>THECREATOR LIVE — Clean Feed</title><style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}video{display:block;width:100%;height:100%;object-fit:contain}</style></head><body><video autoplay muted playsinline></video></body></html>");
+        popup.document.close();
+        popup.document.querySelector("video").srcObject = stream;
+        popup.addEventListener("beforeunload", () => stream.getTracks().forEach(track => track.stop()), { once: true });
+        setNotice("Clean feed opened in a separate window. Capture that window in OBS.", "success");
+      });
+
+      const modal = $("#apps-modal");
+      function closeModal() { modal.classList.remove("open"); $("#connect-apps").focus(); }
+      $("#connect-apps").addEventListener("click", () => { modal.classList.add("open"); $("#close-modal").focus(); });
+      $("#close-modal").addEventListener("click", closeModal);
+      $("#modal-done").addEventListener("click", closeModal);
+      modal.addEventListener("click", event => { if (event.target === modal) closeModal(); });
+      document.addEventListener("keydown", event => { if (event.key === "Escape" && modal.classList.contains("open")) closeModal(); });
+
+      $("#upload-reference").addEventListener("click", () => {
+        if (!$("#reference-consent").checked) {
+          setNotice("Confirm that you own the reference image or have permission to use it before uploading.", "error");
+          $("#reference-consent").focus();
+          return;
+        }
+        $("#reference-file").click();
+      });
+      $("#reference-file").addEventListener("change", event => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          setNotice("Choose a supported image file.", "error");
+          return;
+        }
+        if (state.uploadUrl) URL.revokeObjectURL(state.uploadUrl);
+        state.uploadUrl = URL.createObjectURL(file);
+        const image = new Image();
+        image.onload = () => {
+          state.uploadedImage = image;
+          state.persona = file.name;
+          $$(".persona").forEach(button => button.setAttribute("aria-pressed", "false"));
+          const upload = $("#upload-reference");
+          upload.style.backgroundImage = `linear-gradient(90deg,#121216f2,#121216d9),url("${state.uploadUrl}")`;
+          upload.style.backgroundSize = "cover";
+          upload.textContent = `✓ Reference loaded: ${file.name}`;
+          $("#output-persona").textContent = file.name;
+          setNotice("Reference image loaded for your local preview selection. Browser canvas effects do not perform face replacement.", "success");
+        };
+        image.onerror = () => setNotice("That image could not be opened. Try another image file.", "error");
+        image.src = state.uploadUrl;
+      });
+
+      $("#ws-endpoint").addEventListener("change", queueSettingsSave);
+      $$('input[name="engine"]').forEach(input => input.addEventListener("change", event => {
+        state.engine = event.target.value;
+        $("#engine-telemetry").textContent = state.engine === "canvas" ? "Canvas" : "Local WS";
+        $("#engine-dot").style.background = state.engine === "canvas" ? "var(--green)" : "#818cf8";
+        updateModeCaption();
+        setNotice(state.engine === "canvas" ? "Browser Canvas Engine selected." : "Local GPU bridge selected. Configure and test your bridge; this page does not implement a model-specific inference protocol.");
+        queueSettingsSave();
+      }));
+      setupWebSocket();
+      loadLocalSettings();
+      window.addEventListener("resize", resizeCanvases, { passive: true });
+      window.addEventListener("beforeunload", () => {
+        cancelAnimationFrame(state.raf);
+        if (state.stream) state.stream.getTracks().forEach(track => track.stop());
+        if (state.ws) state.ws.close();
+        if (state.uploadUrl) URL.revokeObjectURL(state.uploadUrl);
+      });
+      resizeCanvases();
+      state.raf = requestAnimationFrame(render);
+    })();
+  </script>
+</body>
+</html>
